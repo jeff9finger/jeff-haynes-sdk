@@ -164,8 +164,8 @@ abstract class MovieResourceITBase {
             for (int i = 0; i < 100; i++) {
                 limitedClient.movies().getById("5cd95395de30eff6ebccde5d"); // should be "Return of the King"
             }
-        })
-            .isInstanceOf(RateLimitException.class)
-            .satisfies(e -> assertThat(((RateLimitException) e).getStatusCode()).isEqualTo(429));
+        }).isInstanceOf(RateLimitException.class)
+          .satisfies(e -> assertThat(((RateLimitException) e).getRemaining()).isEqualTo(0))
+          .satisfies(e -> assertThat(((RateLimitException) e).getStatusCode()).isEqualTo(429));
     }
 }
