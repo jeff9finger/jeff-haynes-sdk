@@ -12,8 +12,8 @@ import dev.lotr.sdk.http.HttpClient;
 import dev.lotr.sdk.http.HttpResponse;
 import dev.lotr.sdk.response.PagedResponse;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
@@ -117,14 +117,24 @@ public abstract class BaseResource<T> {
     // --- Internal helpers ---
 
     protected String buildUrl(String path, RequestOptions options) {
-        StringBuilder url = new StringBuilder(config.getBaseUrl()).append(path);
+        String url = null;
         if (options != null) {
             String query = options.toQueryString();
             if (!query.isEmpty()) {
-                url.append("?").append(URLEncoder.encode(query, StandardCharsets.UTF_8));
+                URI base = URI.create(config.getBaseUrl());
+                try {
+                    url = new URI(base.getScheme(),
+                            base.getAuthority(),
+                           base.getPath() + path,
+                            query,
+                           null
+                    ).toASCIIString();
+                } catch (URISyntaxException e) {
+                    throw new OneApiException("Failed to build request URL with the specified options", e);
+               }
             }
         }
-        return url.toString();
+        return url != null ? url : config.getBaseUrl() + path;
     }
 
     protected HttpResponse execute(String url) {

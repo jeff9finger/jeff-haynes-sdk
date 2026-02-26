@@ -11,10 +11,6 @@ import dev.lotr.sdk.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.function.Function;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -24,8 +20,6 @@ class QuoteResourceTest {
 
     private MockHttpClient mockHttp;
     private OneApiClient client;
-
-    private static final Function<String, String> ENCODE = (value) -> URLEncoder.encode(value, StandardCharsets.UTF_8);
 
     @BeforeEach
     void setUp() {
@@ -69,6 +63,6 @@ class QuoteResourceTest {
         client.quotes().list(options);
 
         String url = mockHttp.getRequests().getFirst().url();
-        assertThat(url).contains(ENCODE.apply("dialog=/ring/i"));
+        assertThat(url).contains("dialog=/ring/i");
     }
 }

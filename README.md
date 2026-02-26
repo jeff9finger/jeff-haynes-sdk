@@ -140,7 +140,7 @@ LOTR_API_KEY=your-key mvn verify -Pintegration
 
 ```bash
 mvn compile exec:java \
-  -Dexec.mainClass="dev.lotr.sdk.demo.DemoApp" \
+  -Dexec.mainClass="dev.lotr.sdk.main.DemoApp" \
   -Dexec.args="your-api-key"
 ```
 
@@ -168,9 +168,9 @@ src/main/java/dev/lotr/sdk/
 │   └── RetryingHttpClient.java    # Decorator: rate-limit retry with backoff
 ├── response/PagedResponse.java    # Pagination metadata + Iterable
 ├── exception/                     # Typed exception hierarchy
-└── demo/DemoApp.java              # Runnable demonstration
+└── main/DemoApp.java              # Runnable demonstration
 ```
 
 ## Design
 
-See [design.md](design.md) for architectural decisions and rationale.
+See [DESIGN.md](DESIGN.md) for architectural decisions and rationale.

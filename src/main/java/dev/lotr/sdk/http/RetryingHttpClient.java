@@ -57,7 +57,7 @@ public final class RetryingHttpClient implements HttpClient {
         while (response.statusCode() == 429 && attempt < maxRetries) {
             Duration wait = backoffStrategy.apply(attempt);
             try {
-                Thread.sleep(wait.toMillis()); // TODO for production, consider a non-blocking approach instead of Thread.sleep
+                Thread.sleep(wait.toMillis()); //sleep OK here. If async desired, add new implementation with async support.
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RateLimitException(

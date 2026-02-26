@@ -80,9 +80,9 @@ class MovieResourceTest {
         client.movies().list(options);
 
         String url = mockHttp.getRequests().getFirst().url();
-        assertThat(url).contains(ENCODE.apply("name=/Ring/i"));
-        assertThat(url).contains(ENCODE.apply(("sort=name:asc")));
-        assertThat(url).contains(ENCODE.apply(("limit=10")));
+        assertThat(url).contains("name=/Ring/i");
+        assertThat(url).contains("sort=name:asc");
+        assertThat(url).contains("limit=10");
     }
 
     @Test
