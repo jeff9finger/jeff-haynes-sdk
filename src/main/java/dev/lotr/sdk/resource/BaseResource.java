@@ -12,6 +12,8 @@ import dev.lotr.sdk.http.HttpClient;
 import dev.lotr.sdk.http.HttpResponse;
 import dev.lotr.sdk.response.PagedResponse;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
@@ -119,7 +121,7 @@ public abstract class BaseResource<T> {
         if (options != null) {
             String query = options.toQueryString();
             if (!query.isEmpty()) {
-                url.append("?").append(query);
+                url.append("?").append(URLEncoder.encode(query, StandardCharsets.UTF_8));
             }
         }
         return url.toString();

@@ -16,7 +16,10 @@ import dev.lotr.sdk.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +32,8 @@ class MovieResourceTest {
 
     private MockHttpClient mockHttp;
     private OneApiClient client;
+
+    private static final Function<String, String> ENCODE = (value) -> URLEncoder.encode(value, StandardCharsets.UTF_8);
 
     @BeforeEach
     void setUp() {
@@ -75,9 +80,9 @@ class MovieResourceTest {
         client.movies().list(options);
 
         String url = mockHttp.getRequests().getFirst().url();
-        assertThat(url).contains("name=/Ring/i");
-        assertThat(url).contains("sort=name:asc");
-        assertThat(url).contains("limit=10");
+        assertThat(url).contains(ENCODE.apply("name=/Ring/i"));
+        assertThat(url).contains(ENCODE.apply(("sort=name:asc")));
+        assertThat(url).contains(ENCODE.apply(("limit=10")));
     }
 
     @Test
@@ -91,7 +96,7 @@ class MovieResourceTest {
         client.movies().list(options);
 
         String url = mockHttp.getRequests().getFirst().url();
-        assertThat(url).contains("budgetInMillions>200");
+        assertThat(url).contains(ENCODE.apply("budgetInMillions>200"));
     }
 
     // --- getById() ---
