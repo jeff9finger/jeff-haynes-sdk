@@ -24,8 +24,12 @@ public class HttpResponse {
         this.headers = headers == null ? Map.of() : headers;
     }
 
+    /**
+     * Convenience method to extract a single header value, returning an empty string if the header is not present.
+     * @param headerName the name of the header to extract
+     * @return the first value of the specified header, or an empty string if the header is not present
+     */
     public String extractHeader(String headerName) {
         return headers.getOrDefault(headerName, List.of("")).getFirst();
     }
-
 }

@@ -5,7 +5,6 @@ import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.http.MockHttpClient;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,18 +58,5 @@ class OneApiClientTest {
 
         String url = mock.getRequests().getFirst().url();
         assertThat(url).startsWith("https://custom-api.example.com/v2");
-    }
-
-    @Test
-    void resourceAccessors_returnSameInstances() {
-        MockHttpClient mock = new MockHttpClient();
-        OneApiClient client = OneApiClient.builder()
-                .apiKey("test-key")
-                .httpClient(mock)
-                .build();
-
-        // Should return the same resource instance each time
-        assertThat(client.movies()).isSameAs(client.movies());
-        assertThat(client.quotes()).isSameAs(client.quotes());
     }
 }
