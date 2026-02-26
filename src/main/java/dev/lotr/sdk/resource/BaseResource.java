@@ -12,6 +12,7 @@ import dev.lotr.sdk.http.HttpClient;
 import dev.lotr.sdk.http.HttpResponse;
 import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.response.PagedResponse;
+import lombok.Setter;
 
 import java.net.URI;
 import java.net.URISyntaxException;

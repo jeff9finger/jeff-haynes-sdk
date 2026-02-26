@@ -1,6 +1,8 @@
 package dev.lotr.sdk;
 
 import dev.lotr.sdk.exception.NotFoundException;
+import dev.lotr.sdk.exception.OneApiException;
+import dev.lotr.sdk.exception.RateLimitException;
 import dev.lotr.sdk.filter.Filter;
 import dev.lotr.sdk.filter.RequestOptions;
 import dev.lotr.sdk.filter.SortDirection;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,5 +147,25 @@ abstract class MovieResourceITBase {
 
         // The API has ~8 movies; streaming with limit=3 per page should return all
         assertThat(allMovies.size()).isGreaterThan(3);
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
+    void getMovie_exceedingRateLimit_withNoRetries_throwsRateLimitException() {
+        // This test is a bit tricky to reliably trigger the rate limit, so it's not included in the regular test suite.
+        // To run it, temporarily set maxRetries to 0 in the client builder and run this method directly.
+
+        OneApiClient limitedClient = OneApiClient.builder()
+                .apiKey(System.getenv("LOTR_API_KEY"))
+                .maxRetries(0) // Disable retries to trigger rate limit error
+                .build();
+
+        assertThatThrownBy(() -> {
+            for (int i = 0; i < 100; i++) {
+                limitedClient.movies().getById("5cd95395de30eff6ebccde5d"); // should be "Return of the King"
+            }
+        })
+            .isInstanceOf(RateLimitException.class)
+            .satisfies(e -> assertThat(((RateLimitException) e).getStatusCode()).isEqualTo(429));
     }
 }
