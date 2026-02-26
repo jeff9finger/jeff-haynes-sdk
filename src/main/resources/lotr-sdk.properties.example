@@ -1,0 +1,14 @@
+# Lord of the Rings SDK Configuration
+# Copy this file to lotr-sdk.properties and fill in your values.
+
+# Required: Your API key from https://the-one-api.dev
+lotr.api.key=YOUR_API_KEY_HERE
+
+# Optional: Base URL (default: https://the-one-api.dev/v2)
+# lotr.api.base-url=https://the-one-api.dev/v2
+
+# Optional: Request timeout in seconds (default: 10)
+# lotr.api.timeout-seconds=10
+
+# Optional: Max retries on rate limit (HTTP 429). Set to 0 to disable. (default: 3)
+# lotr.api.max-retries=3

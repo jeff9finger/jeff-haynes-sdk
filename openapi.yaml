@@ -1,0 +1,441 @@
+openapi: 3.0.3
+info:
+  title: The One API - Lord of the Rings
+  description: |
+    API contract reference for the Lord of the Rings SDK.
+    This document covers the five endpoints in scope for the SDK and serves
+    as documentation of the API surface the SDK was designed against.
+
+    **This document is not used for code generation.** It exists as a reference
+    for SDK maintainers and to demonstrate an API-first development approach.
+  version: 2.0.0
+  contact:
+    url: https://the-one-api.dev
+
+servers:
+  - url: https://the-one-api.dev/v2
+    description: Production API
+
+security:
+  - BearerAuth: []
+
+paths:
+  /movie:
+    get:
+      summary: List all movies
+      operationId: listMovies
+      tags: [Movies]
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/movieSort'
+        - $ref: '#/components/parameters/movieId'
+        - $ref: '#/components/parameters/movieName'
+        - $ref: '#/components/parameters/movieRuntimeInMinutes'
+        - $ref: '#/components/parameters/movieBudgetInMillions'
+        - $ref: '#/components/parameters/movieBoxOfficeRevenueInMillions'
+        - $ref: '#/components/parameters/movieAcademyAwardNominations'
+        - $ref: '#/components/parameters/movieAcademyAwardWins'
+        - $ref: '#/components/parameters/movieRottenTomatoesScore'
+      responses:
+        '200':
+          description: Paginated list of movies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviePagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /movie/{id}:
+    get:
+      summary: Get a single movie by ID
+      operationId: getMovie
+      tags: [Movies]
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '200':
+          description: The requested movie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviePagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /movie/{id}/quote:
+    get:
+      summary: Get quotes for a specific movie
+      operationId: getMovieQuotes
+      tags: [Movies]
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/quoteSort'
+        - $ref: '#/components/parameters/quoteId'
+        - $ref: '#/components/parameters/quoteDialog'
+        - $ref: '#/components/parameters/quoteMovieId'
+        - $ref: '#/components/parameters/quoteCharacterId'
+      responses:
+        '200':
+          description: Paginated list of quotes for the movie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotePagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /quote:
+    get:
+      summary: List all quotes
+      operationId: listQuotes
+      tags: [Quotes]
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/quoteSort'
+        - $ref: '#/components/parameters/quoteId'
+        - $ref: '#/components/parameters/quoteDialog'
+        - $ref: '#/components/parameters/quoteMovieId'
+        - $ref: '#/components/parameters/quoteCharacterId'
+      responses:
+        '200':
+          description: Paginated list of quotes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotePagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /quote/{id}:
+    get:
+      summary: Get a single quote by ID
+      operationId: getQuote
+      tags: [Quotes]
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '200':
+          description: The requested quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotePagedResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API key obtained from https://the-one-api.dev/sign-up.
+        Pass as: Authorization: Bearer <api-key>
+
+  parameters:
+    resourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique resource identifier
+
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 1000
+      description: Maximum number of items per page
+
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+      description: Page number (1-indexed)
+
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+      description: Number of items to skip
+
+    movieSort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        pattern: '^(id|name|runtimeInMinutes|budgetInMillions|boxOfficeRevenueInMillions|academyAwardNominations|academyAwardWins|rottenTomatoesScore):(asc|desc)$'
+        example: 'name:asc'
+      description: |
+        Sort movies by field and direction. Format: `field:asc` or `field:desc`.
+        Valid fields: `id`, `name`, `runtimeInMinutes`, `budgetInMillions`,
+        `boxOfficeRevenueInMillions`, `academyAwardNominations`, `academyAwardWins`,
+        `rottenTomatoesScore`.
+
+    quoteSort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        pattern: '^(id|dialog|movie|character):(asc|desc)$'
+        example: 'dialog:asc'
+      description: |
+        Sort quotes by field and direction. Format: `field:asc` or `field:desc`.
+        Valid fields: `id`, `dialog`, `movie`, `character`.
+
+    # Movie filter parameters
+    # Filter expressions are sent as raw query string fragments by the SDK.
+    # The One API supports non-standard operators (!=, >, <, >=, <=, !field)
+    # beyond the standard key=value form documented here.
+    movieId:
+      name: id
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter movies by ID. Operators: `id=value` (exact), `id!=value` (exclude),
+        `id=v1,v2` (include list), `id!=v1,v2` (exclude list),
+        `id=/pattern/flags` (regex), `id` (exists), `!id` (not exists).
+
+    movieName:
+      name: name
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter movies by name. Operators: `name=value` (exact), `name!=value` (exclude),
+        `name=v1,v2` (include list), `name!=v1,v2` (exclude list),
+        `name=/Ring/i` (regex), `name` (exists), `!name` (not exists).
+
+    movieRuntimeInMinutes:
+      name: runtimeInMinutes
+      in: query
+      schema:
+        type: integer
+      description: |
+        Filter movies by runtime (minutes). Operators: `runtimeInMinutes=201` (exact),
+        `runtimeInMinutes!=201` (exclude), `runtimeInMinutes>150` (gt),
+        `runtimeInMinutes<200` (lt), `runtimeInMinutes>=150` (gte),
+        `runtimeInMinutes<=200` (lte), `runtimeInMinutes` (exists),
+        `!runtimeInMinutes` (not exists).
+
+    movieBudgetInMillions:
+      name: budgetInMillions
+      in: query
+      schema:
+        type: number
+      description: |
+        Filter movies by production budget (millions USD). Operators: `budgetInMillions=94`
+        (exact), `budgetInMillions!=94` (exclude), `budgetInMillions>100` (gt),
+        `budgetInMillions<200` (lt), `budgetInMillions>=100` (gte),
+        `budgetInMillions<=200` (lte), `budgetInMillions` (exists),
+        `!budgetInMillions` (not exists).
+
+    movieBoxOfficeRevenueInMillions:
+      name: boxOfficeRevenueInMillions
+      in: query
+      schema:
+        type: number
+      description: |
+        Filter movies by box office revenue (millions USD). Supports numeric operators:
+        exact (`boxOfficeRevenueInMillions=877`), `>`, `<`, `>=`, `<=`,
+        exists (`boxOfficeRevenueInMillions`), not exists (`!boxOfficeRevenueInMillions`).
+
+    movieAcademyAwardNominations:
+      name: academyAwardNominations
+      in: query
+      schema:
+        type: integer
+      description: |
+        Filter movies by Academy Award nomination count. Supports numeric operators:
+        exact (`academyAwardNominations=13`), `>`, `<`, `>=`, `<=`,
+        exists (`academyAwardNominations`), not exists (`!academyAwardNominations`).
+
+    movieAcademyAwardWins:
+      name: academyAwardWins
+      in: query
+      schema:
+        type: integer
+      description: |
+        Filter movies by Academy Award win count. Supports numeric operators:
+        exact (`academyAwardWins=11`), `>`, `<`, `>=`, `<=`,
+        exists (`academyAwardWins`), not exists (`!academyAwardWins`).
+
+    movieRottenTomatoesScore:
+      name: rottenTomatoesScore
+      in: query
+      schema:
+        type: number
+      description: |
+        Filter movies by Rotten Tomatoes score (0–100). Supports numeric operators:
+        exact (`rottenTomatoesScore=94`), `>`, `<`, `>=`, `<=`,
+        exists (`rottenTomatoesScore`), not exists (`!rottenTomatoesScore`).
+
+    # Quote filter parameters
+    quoteId:
+      name: id
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter quotes by ID. Operators: `id=value` (exact), `id!=value` (exclude),
+        `id=v1,v2` (include list), `id!=v1,v2` (exclude list),
+        `id=/pattern/flags` (regex), `id` (exists), `!id` (not exists).
+
+    quoteDialog:
+      name: dialog
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter quotes by dialog text. Operators: `dialog=value` (exact),
+        `dialog!=value` (exclude), `dialog=v1,v2` (include list),
+        `dialog=/ring/i` (regex), `dialog` (exists), `!dialog` (not exists).
+
+    quoteMovieId:
+      name: movie
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter quotes by movie ID (foreign key). Operators:
+        `movie=5cd95395de30eff6ebccde5c` (exact), `movie!=id` (exclude),
+        `movie=id1,id2` (include list), `movie!=id1,id2` (exclude list),
+        `movie` (exists), `!movie` (not exists).
+
+    quoteCharacterId:
+      name: character
+      in: query
+      schema:
+        type: string
+      description: |
+        Filter quotes by character ID (foreign key). Operators:
+        `character=5cd99d4bde30eff6ebccfbe6` (exact), `character!=id` (exclude),
+        `character=id1,id2` (include list), `character!=id1,id2` (exclude list),
+        `character` (exists), `!character` (not exists).
+
+  schemas:
+    Movie:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique movie identifier
+        name:
+          type: string
+        runtimeInMinutes:
+          type: integer
+        budgetInMillions:
+          type: number
+        boxOfficeRevenueInMillions:
+          type: number
+        academyAwardNominations:
+          type: integer
+        academyAwardWins:
+          type: integer
+        rottenTomatoesScore:
+          type: number
+
+    Quote:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique quote identifier
+        dialog:
+          type: string
+        movie_id:
+          type: string
+          description: Movie ID this quote belongs to
+        character_id:
+          type: string
+          description: Character ID who said this quote
+
+    PaginationMetadata:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of matching items
+        limit:
+          type: integer
+        offset:
+          type: integer
+        page:
+          type: integer
+          description: Current page number
+        pages:
+          type: integer
+          description: Total number of pages
+
+    MoviePagedResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMetadata'
+        - type: object
+          properties:
+            docs:
+              type: array
+              items:
+                $ref: '#/components/schemas/Movie'
+
+    QuotePagedResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMetadata'
+        - type: object
+          properties:
+            docs:
+              type: array
+              items:
+                $ref: '#/components/schemas/Quote'
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key (HTTP 401)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Unauthorized
+
+    NotFound:
+      description: Resource not found (HTTP 404)
+
+    RateLimitExceeded:
+      description: |
+        Too many requests (HTTP 429). The API allows 100 requests per
+        10-minute window. The SDK's RetryingHttpClient handles this
+        automatically with configurable backoff.
