@@ -4,7 +4,7 @@ import dev.lotr.sdk.exception.OneApiException;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
-import java.time.Duration;;
+import java.time.Duration;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
