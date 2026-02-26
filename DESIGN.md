@@ -221,9 +221,9 @@ The existing `Filter.where(FilterableField)` overload picks it up with no change
 
 Tests are organized into three tiers:
 
-**Unit tests** (`FilterTest`, `RetryingHttpClientTest`) — Verify isolated logic: filter expression generation, URL encoding, retry backoff behavior. No HTTP, no deserialization.
+**Unit tests** (`FilterTest`, `RetryingHttpClientTest`) — Verify isolated logic: filter expression generation, retry backoff behavior. No HTTP, no deserialization.
 
-**Resource tests** (`MovieResourceTest`, `QuoteResourceTest`, `OneApiClientTest`) — Verify correct URL construction, response deserialization, error mapping, and builder behavior using `MockHttpClient`. These are integration tests at the component level — they exercise the full path from resource accessor to deserialized response.
+**Resource tests** (`MovieResourceTest`, `QuoteResourceTest`, `OneApiClientTest`) — Verify correct URL construction (including per-component encoding via the multi-argument `URI` constructor), response deserialization, error mapping, and builder behavior using `MockHttpClient`. These are integration tests at the component level — they exercise the full path from resource accessor to deserialized response.
 
 **Live integration tests** (`MovieResourceIT`, `QuoteResourceIT`) — Hit the real API with a real API key. Run via `mvn verify -Pintegration`. Separated into `src/integration-test/` with a Maven profile so `mvn test` stays fast and self-contained.
 
