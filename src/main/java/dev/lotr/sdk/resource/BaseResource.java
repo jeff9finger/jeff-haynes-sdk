@@ -10,6 +10,7 @@ import dev.lotr.sdk.exception.RateLimitException;
 import dev.lotr.sdk.filter.RequestOptions;
 import dev.lotr.sdk.http.HttpClient;
 import dev.lotr.sdk.http.HttpResponse;
+import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.response.PagedResponse;
 
 import java.net.URI;
@@ -64,7 +65,7 @@ public abstract class BaseResource<T> {
     public PagedResponse<T> list(RequestOptions options) {
         String url = buildUrl(resourcePath, options);
         HttpResponse response = execute(url);
-        return deserializePage(response.body());
+        return deserializePage(response.getBody());
     }
 
     /**
@@ -77,7 +78,7 @@ public abstract class BaseResource<T> {
     public T getById(String id) {
         String url = buildUrl(resourcePath + "/" + id, null);
         HttpResponse response = execute(url);
-        PagedResponse<T> page = deserializePage(response.body());
+        PagedResponse<T> page = deserializePage(response.getBody());
         if (page.getItems().isEmpty()) {
             throw new NotFoundException("Resource not found: " + resourcePath + "/" + id);
         }
@@ -144,18 +145,18 @@ public abstract class BaseResource<T> {
     }
 
     private void handleErrors(HttpResponse response) {
-        switch (response.statusCode()) {
-            case 200 -> { /* success */ }
-            case 401 -> throw new AuthenticationException(
+        switch (response.getStatusCode()) {
+            case HttpStatus.OK -> { /* success */ }
+            case HttpStatus.UNAUTHORIZED -> throw new AuthenticationException(
                     "Invalid or missing API key");
-            case 404 -> throw new NotFoundException(
+            case HttpStatus.NOT_FOUND -> throw new NotFoundException(
                     "Resource not found");
-            case 429 -> throw new RateLimitException(
-                    "Rate limit exceeded");
+            case HttpStatus.TOO_MANY_REQUESTS -> throw new RateLimitException(
+                    "Rate limit exceeded", response.getHeaders());
             default -> throw new OneApiException(
-                    "API error (HTTP " + response.statusCode() + "): "
-                            + response.body(),
-                    response.statusCode());
+                    "API error (HTTP " + response.getStatusCode() + "): "
+                            + response.getBody(),
+                    response.getStatusCode());
         }
     }
 

@@ -5,11 +5,14 @@ import dev.lotr.sdk.TestFixtures;
 import dev.lotr.sdk.filter.Filter;
 import dev.lotr.sdk.filter.RequestOptions;
 import dev.lotr.sdk.http.HttpResponse;
+import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.http.MockHttpClient;
 import dev.lotr.sdk.model.Quote;
 import dev.lotr.sdk.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,7 +35,7 @@ class QuoteResourceTest {
 
     @Test
     void list_returnsQuotes() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.QUOTE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.QUOTE_LIST_JSON, Collections.emptyMap()));
 
         PagedResponse<Quote> response = client.quotes().list();
 
@@ -43,7 +46,7 @@ class QuoteResourceTest {
 
     @Test
     void getById_returnsSingleQuote() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.SINGLE_QUOTE_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.SINGLE_QUOTE_JSON, Collections.emptyMap()));
 
         Quote quote = client.quotes().getById("5cd96e05de30eff6ebcce7e9");
 
@@ -54,7 +57,7 @@ class QuoteResourceTest {
 
     @Test
     void list_withFilter_includesQueryParams() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.QUOTE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.QUOTE_LIST_JSON, Collections.emptyMap()));
 
         RequestOptions options = RequestOptions.builder()
                 .filter(Filter.where("dialog").matchesRegex("/ring/i"))

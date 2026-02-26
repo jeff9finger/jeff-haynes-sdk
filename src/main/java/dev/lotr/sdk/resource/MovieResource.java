@@ -5,6 +5,7 @@ import dev.lotr.sdk.config.OneApiConfig;
 import dev.lotr.sdk.filter.RequestOptions;
 import dev.lotr.sdk.http.HttpClient;
 import dev.lotr.sdk.http.HttpResponse;
+import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.model.Movie;
 import dev.lotr.sdk.model.MovieWithQuotes;
 import dev.lotr.sdk.model.Quote;
@@ -103,18 +104,18 @@ public final class MovieResource extends BaseResource<Movie> {
             }
 
             HttpResponse response = httpClient.get(url.toString(), config.getApiKey());
-            if (response.statusCode() != 200) {
+            if (response.getStatusCode() != HttpStatus.OK) {
                 // Delegate error handling — reuse exception mapping
                 throw new dev.lotr.sdk.exception.OneApiException(
-                        "API error (HTTP " + response.statusCode() + "): "
-                                + response.body(),
-                        response.statusCode());
+                        "API error (HTTP " + response.getStatusCode() + "): "
+                                + response.getBody(),
+                        response.getStatusCode());
             }
 
             try {
                 var type = objectMapper.getTypeFactory()
                         .constructParametricType(PagedResponse.class, Quote.class);
-                return objectMapper.readValue(response.body(), type);
+                return objectMapper.readValue(response.getBody(), type);
             } catch (Exception e) {
                 throw new dev.lotr.sdk.exception.OneApiException(
                         "Failed to parse quotes response: " + e.getMessage(), e);

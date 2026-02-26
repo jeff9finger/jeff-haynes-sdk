@@ -1,5 +1,10 @@
 package dev.lotr.sdk.http;
 
+import lombok.Getter;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * Internal representation of an HTTP response from the API.
  *
@@ -7,6 +12,20 @@ package dev.lotr.sdk.http;
  * specific HTTP client implementation, making both testable and
  * swappable independently.
  */
-public record HttpResponse(int statusCode, String body) {
+@Getter
+public class HttpResponse {
+    private final int statusCode;
+    private final String body;
+    private final Map<String, List<String>> headers;
+
+    public HttpResponse(int statusCode, String body, Map<String, List<String>> headers) {
+        this.statusCode = statusCode;
+        this.body = body;
+        this.headers = headers == null ? Map.of() : headers;
+    }
+
+    public String extractHeader(String headerName) {
+        return headers.getOrDefault(headerName, List.of("")).getFirst();
+    }
 
 }

@@ -45,7 +45,7 @@ public final class DefaultHttpClient implements HttpClient {
                     java.net.http.HttpResponse.BodyHandlers.ofString()
             );
 
-            return new HttpResponse(response.statusCode(), response.body());
+            return new HttpResponse(response.statusCode(), response.body(), response.headers().map());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new OneApiException("Request interrupted", e);

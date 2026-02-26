@@ -8,6 +8,7 @@ import dev.lotr.sdk.filter.Filter;
 import dev.lotr.sdk.filter.RequestOptions;
 import dev.lotr.sdk.filter.SortDirection;
 import dev.lotr.sdk.http.HttpResponse;
+import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.http.MockHttpClient;
 import dev.lotr.sdk.model.Movie;
 import dev.lotr.sdk.model.MovieWithQuotes;
@@ -16,11 +17,8 @@ import dev.lotr.sdk.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,8 +30,6 @@ class MovieResourceTest {
 
     private MockHttpClient mockHttp;
     private OneApiClient client;
-
-    private static final Function<String, String> ENCODE = (value) -> URLEncoder.encode(value, StandardCharsets.UTF_8);
 
     @BeforeEach
     void setUp() {
@@ -48,7 +44,7 @@ class MovieResourceTest {
 
     @Test
     void list_returnsMovies() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON, Collections.emptyMap()));
 
         PagedResponse<Movie> response = client.movies().list();
 
@@ -60,7 +56,7 @@ class MovieResourceTest {
 
     @Test
     void list_sendsAuthorizationHeader() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON, Collections.emptyMap()));
 
         client.movies().list();
 
@@ -69,7 +65,7 @@ class MovieResourceTest {
 
     @Test
     void list_withOptions_includesQueryParams() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON, Collections.emptyMap()));
 
         RequestOptions options = RequestOptions.builder()
                 .filter(Filter.where("name").matchesRegex("/Ring/i"))
@@ -87,7 +83,7 @@ class MovieResourceTest {
 
     @Test
     void list_withTypeSafeFilter_includesQueryParams() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON,Collections.emptyMap()));
 
         RequestOptions options = RequestOptions.builder()
                 .filter(Filter.where(MovieField.BUDGET_IN_MILLIONS).greaterThan(200))
@@ -96,14 +92,14 @@ class MovieResourceTest {
         client.movies().list(options);
 
         String url = mockHttp.getRequests().getFirst().url();
-        assertThat(url).contains(ENCODE.apply("budgetInMillions>200"));
+        assertThat(url).contains("budgetInMillions%3E200");
     }
 
     // --- getById() ---
 
     @Test
     void getById_returnsSingleMovie() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.SINGLE_MOVIE_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.SINGLE_MOVIE_JSON, Collections.emptyMap()));
 
         Movie movie = client.movies().getById("5cd95395de30eff6ebccde5d");
 
@@ -113,7 +109,7 @@ class MovieResourceTest {
 
     @Test
     void getById_withEmptyDocs_throwsNotFoundException() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.EMPTY_RESPONSE_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.EMPTY_RESPONSE_JSON, Collections.emptyMap()));
 
         assertThatThrownBy(() -> client.movies().getById("nonexistent"))
                 .isInstanceOf(NotFoundException.class);
@@ -123,8 +119,8 @@ class MovieResourceTest {
 
     @Test
     void getWithQuotes_combinesMovieAndQuotes() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.SINGLE_MOVIE_JSON));
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.QUOTE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.SINGLE_MOVIE_JSON, Collections.emptyMap()));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.QUOTE_LIST_JSON, Collections.emptyMap()));
 
         MovieWithQuotes result = client.movies()
                 .getWithQuotes("5cd95395de30eff6ebccde5d");
@@ -139,13 +135,13 @@ class MovieResourceTest {
 
     @Test
     void listAll_streamsAcrossPages() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.PAGE_1_OF_3_JSON));
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.PAGE_2_OF_3_JSON));
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.PAGE_3_OF_3_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.PAGE_1_OF_3_JSON, Collections.emptyMap()));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.PAGE_2_OF_3_JSON, Collections.emptyMap()));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.PAGE_3_OF_3_JSON, Collections.emptyMap()));
 
         List<String> names = client.movies().listAll()
                 .map(Movie::getName)
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(names).containsExactly(
                 "The Fellowship of the Ring",
@@ -159,7 +155,7 @@ class MovieResourceTest {
 
     @Test
     void unauthorizedResponse_throwsAuthenticationException() {
-        mockHttp.enqueue(new HttpResponse(401, "Unauthorized"));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", Collections.emptyMap()));
 
         assertThatThrownBy(() -> client.movies().list())
                 .isInstanceOf(AuthenticationException.class);
@@ -167,7 +163,7 @@ class MovieResourceTest {
 
     @Test
     void notFoundResponse_throwsNotFoundException() {
-        mockHttp.enqueue(new HttpResponse(404, "Not Found"));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.NOT_FOUND, "Not Found", Collections.emptyMap()));
 
         assertThatThrownBy(() -> client.movies().getById("bad-id"))
                 .isInstanceOf(NotFoundException.class);
@@ -177,7 +173,7 @@ class MovieResourceTest {
 
     @Test
     void pagedResponse_exposesMetadata() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.PAGE_1_OF_3_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.PAGE_1_OF_3_JSON, Collections.emptyMap()));
 
         PagedResponse<Movie> page = client.movies().list();
 
@@ -190,7 +186,7 @@ class MovieResourceTest {
 
     @Test
     void pagedResponse_isIterable() {
-        mockHttp.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mockHttp.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON, Collections.emptyMap()));
 
         PagedResponse<Movie> page = client.movies().list();
         int count = 0;

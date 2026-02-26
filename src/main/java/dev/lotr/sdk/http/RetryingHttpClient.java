@@ -3,7 +3,12 @@ package dev.lotr.sdk.http;
 import dev.lotr.sdk.exception.RateLimitException;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+
+import static dev.lotr.sdk.exception.RateLimitException.X_RATE_LIMIT_LIMIT_HEADER;
+import static dev.lotr.sdk.exception.RateLimitException.X_RATE_LIMIT_REMAINING_HEADER;
 
 /**
  * Decorator that adds automatic retry with backoff for rate-limited responses.
@@ -53,25 +58,48 @@ public final class RetryingHttpClient implements HttpClient {
     public HttpResponse get(String url, String bearerToken) {
         HttpResponse response = delegate.get(url, bearerToken);
 
+        final Map<String, List<String>> headers = response.getHeaders();
         int attempt = 0;
-        while (response.statusCode() == 429 && attempt < maxRetries) {
+        while (response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS && attempt < maxRetries) {
+            int limit = extractRateLimitHeader(headers,X_RATE_LIMIT_LIMIT_HEADER);
+            int remaining = extractRateLimitHeader(headers,X_RATE_LIMIT_REMAINING_HEADER);
+            if (limit > 0 && remaining >= limit) {
+                throw new RateLimitException(
+                        "No more requests remaining in the current rate window", response.getHeaders());
+            }
             Duration wait = backoffStrategy.apply(attempt);
             try {
                 Thread.sleep(wait.toMillis()); //sleep OK here. If async desired, add new implementation with async support.
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RateLimitException(
-                        "Interrupted while waiting for rate limit backoff");
+                        "Interrupted while waiting for rate limit backoff", response.getHeaders());
             }
             response = delegate.get(url, bearerToken);
             attempt++;
         }
 
-        if (response.statusCode() == 429) {
-            throw new RateLimitException(
-                    "Rate limit exceeded after " + maxRetries + " retries");
+        if (response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+            int limit = extractRateLimitHeader(headers,X_RATE_LIMIT_LIMIT_HEADER);
+            int remaining = extractRateLimitHeader(headers,X_RATE_LIMIT_REMAINING_HEADER);
+            if (limit > 0 && remaining >= limit) {
+                throw new RateLimitException(
+                        "No more requests remaining in the current rate window", response.getHeaders());
+            } else {
+                throw new RateLimitException(
+                        "Rate limit exceeded after " + maxRetries + " retries", response.getHeaders());
+            }
         }
 
         return response;
+    }
+
+    private int extractRateLimitHeader(Map<String, List<String>> headers, String headerName) {
+        String val = headers.getOrDefault(headerName, List.of("0")).getFirst();
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            return 0; // default to 0 if header is missing or malformed
+        }
     }
 }

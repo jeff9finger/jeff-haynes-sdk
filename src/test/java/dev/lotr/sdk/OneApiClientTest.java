@@ -1,8 +1,12 @@
 package dev.lotr.sdk;
 
 import dev.lotr.sdk.http.HttpResponse;
+import dev.lotr.sdk.http.HttpStatus;
 import dev.lotr.sdk.http.MockHttpClient;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collection;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,7 +19,7 @@ class OneApiClientTest {
     @Test
     void builder_withApiKey_createsClient() {
         MockHttpClient mock = new MockHttpClient();
-        mock.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mock.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON, Collections.emptyMap()));
 
         OneApiClient client = OneApiClient.builder()
                 .apiKey("test-key")
@@ -43,7 +47,7 @@ class OneApiClientTest {
     @Test
     void builder_withCustomBaseUrl_usesIt() {
         MockHttpClient mock = new MockHttpClient();
-        mock.enqueue(new HttpResponse(200, TestFixtures.MOVIE_LIST_JSON));
+        mock.enqueue(new HttpResponse(HttpStatus.OK, TestFixtures.MOVIE_LIST_JSON, Collections.emptyMap()));
 
         OneApiClient client = OneApiClient.builder()
                 .apiKey("test-key")
