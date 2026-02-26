@@ -11,6 +11,10 @@ import dev.lotr.sdk.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Function;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -20,6 +24,8 @@ class QuoteResourceTest {
 
     private MockHttpClient mockHttp;
     private OneApiClient client;
+
+    private static final Function<String, String> ENCODE = (value) -> URLEncoder.encode(value, StandardCharsets.UTF_8);
 
     @BeforeEach
     void setUp() {
@@ -37,7 +43,7 @@ class QuoteResourceTest {
         PagedResponse<Quote> response = client.quotes().list();
 
         assertThat(response.getItems()).hasSize(2);
-        assertThat(response.getItems().get(0).getDialog())
+        assertThat(response.getItems().getFirst().getDialog())
                 .isEqualTo("One Ring to rule them all.");
     }
 
@@ -63,6 +69,6 @@ class QuoteResourceTest {
         client.quotes().list(options);
 
         String url = mockHttp.getRequests().getFirst().url();
-        assertThat(url).contains("dialog=/ring/i");
+        assertThat(url).contains(ENCODE.apply("dialog=/ring/i"));
     }
 }

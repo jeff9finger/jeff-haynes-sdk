@@ -2,11 +2,6 @@ package dev.lotr.sdk.filter;
 
 import dev.lotr.sdk.model.field.FilterableField;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
 /**
  * Fluent builder for constructing API filter expressions.
  *
@@ -82,27 +77,25 @@ public final class Filter {
 
     /** Exact match: {@code field=value} */
     public FilterExpression equals(String value) {
-        return new FilterExpression(field + "=" + encode(value));
+        //return new FilterExpression(field + "=" + encode(value));
+        return new FilterExpression(field + "=" + value);
     }
 
     /** Negated match: {@code field!=value} */
     public FilterExpression notEquals(String value) {
-        return new FilterExpression(field + "!=" + encode(value));
+        //return new FilterExpression(field + "!=" + encode(value));
+        return new FilterExpression(field + "!=" + value);
     }
 
     /** Include filter: {@code field=val1,val2,val3} */
     public FilterExpression in(String... values) {
-        String joined = Arrays.stream(values)
-                .map(this::encode)
-                .collect(Collectors.joining(","));
+        String joined = String.join(",", values);
         return new FilterExpression(field + "=" + joined);
     }
 
     /** Exclude filter: {@code field!=val1,val2} */
     public FilterExpression notIn(String... values) {
-        String joined = Arrays.stream(values)
-                .map(this::encode)
-                .collect(Collectors.joining(","));
+        String joined = String.join(",", values);
         return new FilterExpression(field + "!=" + joined);
     }
 
@@ -144,9 +137,4 @@ public final class Filter {
     public FilterExpression lessThanOrEqual(Number value) {
         return new FilterExpression(field + "<=" + value);
     }
-
-    private String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
 }

@@ -17,13 +17,13 @@ class FilterTest {
     @Test
     void equalsFilter_producesCorrectQueryParam() {
         FilterExpression expr = Filter.where("name").equals("The Return of the King");
-        assertThat(expr.toQueryParam()).isEqualTo("name=The+Return+of+the+King");
+        assertThat(expr.toQueryParam()).isEqualTo("name=The Return of the King");
     }
 
     @Test
     void notEqualsFilter_producesCorrectQueryParam() {
         FilterExpression expr = Filter.where("name").notEquals("The Hobbit");
-        assertThat(expr.toQueryParam()).isEqualTo("name!=The+Hobbit");
+        assertThat(expr.toQueryParam()).isEqualTo("name!=The Hobbit");
     }
 
     @Test
@@ -73,13 +73,13 @@ class FilterTest {
         FilterExpression expr = Filter.where("name")
                 .in("The Two Towers", "The Return of the King");
         assertThat(expr.toQueryParam())
-                .isEqualTo("name=The+Two+Towers,The+Return+of+the+King");
+                .isEqualTo("name=The Two Towers,The Return of the King");
     }
 
     @Test
     void notInFilter_joinsValuesWithComma() {
         FilterExpression expr = Filter.where("name").notIn("The Hobbit");
-        assertThat(expr.toQueryParam()).isEqualTo("name!=The+Hobbit");
+        assertThat(expr.toQueryParam()).isEqualTo("name!=The Hobbit");
     }
 
     // --- Filter.where(FilterableField) ---
@@ -98,6 +98,7 @@ class FilterTest {
 
     // --- Validation ---
 
+    @SuppressWarnings("DataFlowIssue")
     @Test
     void nullFieldName_throwsException() {
         assertThatThrownBy(() -> Filter.where((String) null))
