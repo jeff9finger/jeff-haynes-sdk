@@ -1,17 +1,17 @@
 package dev.lotr.sdk;
 
 /**
- * Integration tests for QuoteResource using the default Java HTTP client.
+ * Integration tests for MovieResource using Apache HttpClient.
  *
  * <p>Requires: {@code LOTR_API_KEY=your-key mvn verify -Pintegration}
  */
-class QuoteResourceIT extends QuoteResourceITBase {
+class ApacheMovieResourceIT extends MovieResourceITBase {
 
     @Override
     OneApiClient createClient(String apiKey) {
         return OneApiClient.builder()
                 .apiKey(apiKey)
-                .maxRetries(3)
+                .httpClient(new ApacheHttpClient())
                 .build();
     }
 }
