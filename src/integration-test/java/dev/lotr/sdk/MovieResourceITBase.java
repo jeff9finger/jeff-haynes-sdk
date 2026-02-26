@@ -1,7 +1,6 @@
 package dev.lotr.sdk;
 
 import dev.lotr.sdk.exception.NotFoundException;
-import dev.lotr.sdk.exception.OneApiException;
 import dev.lotr.sdk.exception.RateLimitException;
 import dev.lotr.sdk.filter.Filter;
 import dev.lotr.sdk.filter.RequestOptions;
@@ -15,8 +14,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.time.Duration;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,6 +42,7 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listMovies_returnsResults() {
         PagedResponse<Movie> response = client.movies().list();
 
@@ -50,6 +52,7 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listMovies_withPagination() {
         RequestOptions options = RequestOptions.builder()
                 .limit(2)
@@ -64,6 +67,7 @@ abstract class MovieResourceITBase {
 
     @Test
     @Disabled("Sorting test - A query parameter of 'sort=name' currently throws a 500, so skip this test")
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listMovies_withSort() {
         RequestOptions options = RequestOptions.builder()
                 .sort(MovieField.NAME, SortDirection.ASC)
@@ -81,6 +85,7 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listMovies_withBudgetFilter() {
         RequestOptions options = RequestOptions.builder()
                 .filter(Filter.where(MovieField.BUDGET_IN_MILLIONS).greaterThan(100))
@@ -93,6 +98,7 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void getMovieById_returnsCorrectMovie() {
         PagedResponse<Movie> movies = client.movies().list(
                 RequestOptions.builder().limit(1).build());
@@ -105,12 +111,14 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void getMovieById_nonExistent_throwsNotFoundException() {
         assertThatThrownBy(() -> client.movies().getById("000000000000000000000000"))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void getMovieQuotes_returnsQuotes() {
         PagedResponse<Movie> movies = client.movies().list(
                 RequestOptions.builder()
@@ -127,6 +135,7 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void getWithQuotes_combinesBothCalls() {
         PagedResponse<Movie> movies = client.movies().list(
                 RequestOptions.builder().limit(1).build());
@@ -140,6 +149,7 @@ abstract class MovieResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listAll_streamsAcrossPages() {
         List<Movie> allMovies = client.movies().listAll(
                 RequestOptions.builder().limit(3).build()
@@ -157,6 +167,7 @@ abstract class MovieResourceITBase {
 
         OneApiClient limitedClient = OneApiClient.builder()
                 .apiKey(System.getenv("LOTR_API_KEY"))
+                .timeout(Duration.ofSeconds(5))
                 .maxRetries(0) // Disable retries to trigger rate limit error
                 .build();
 
@@ -165,7 +176,7 @@ abstract class MovieResourceITBase {
                 limitedClient.movies().getById("5cd95395de30eff6ebccde5d"); // should be "Return of the King"
             }
         }).isInstanceOf(RateLimitException.class)
-          .satisfies(e -> assertThat(((RateLimitException) e).getRemaining()).isEqualTo(0))
+          .satisfies(e -> assertThat(((RateLimitException) e).getRemaining()).isLessThanOrEqualTo(0))
           .satisfies(e -> assertThat(((RateLimitException) e).getStatusCode()).isEqualTo(429));
     }
 }

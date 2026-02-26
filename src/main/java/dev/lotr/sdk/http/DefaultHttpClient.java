@@ -4,7 +4,10 @@ import dev.lotr.sdk.exception.OneApiException;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
-import java.time.Duration;
+import java.time.Duration;;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.FINE;
 
 /**
  * Default HTTP client backed by Java 21's {@link java.net.http.HttpClient}.
@@ -13,6 +16,8 @@ import java.time.Duration;
  * {@link java.net.http.HttpClient} instance across all requests.
  */
 public final class DefaultHttpClient implements HttpClient {
+
+    private static final Logger logger = Logger.getLogger(DefaultHttpClient.class.getName());
 
     private final java.net.http.HttpClient delegate;
     private final Duration timeout;
@@ -32,6 +37,7 @@ public final class DefaultHttpClient implements HttpClient {
     @Override
     public HttpResponse get(String url, String bearerToken) {
         try {
+            logger.log(FINE, "GET {}", url);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Authorization", "Bearer " + bearerToken)
@@ -45,6 +51,9 @@ public final class DefaultHttpClient implements HttpClient {
                     java.net.http.HttpResponse.BodyHandlers.ofString()
             );
 
+            if (logger.isLoggable(FINE)) {
+                logger.log(FINE, "{0} GET {1}", new Object[]{response.statusCode(), url});
+            }
             return new HttpResponse(response.statusCode(), response.body(), response.headers().map());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -52,5 +61,6 @@ public final class DefaultHttpClient implements HttpClient {
         } catch (Exception e) {
             throw new OneApiException("HTTP request failed: " + e.getMessage(), e);
         }
+
     }
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This SDK provides a Java client for [The One API](https://the-one-api.dev), covering the movie and quote endpoints. It is designed for production use with extensibility in mind — new resources (books, characters, chapters) can be added by following the established patterns without modifying existing code.
+This SDK provides a Java client for [The One API](https://the-one-api.dev)(a.k.a The Lord of the Rings API), covering the movie and quote endpoints. It is designed for production use with extensibility in mind — new resources (books, characters, chapters) can be added by following the established patterns without modifying existing code.
 
 ## Design Philosophy
 
@@ -32,9 +32,10 @@ Three principles guided every decision:
 │  │DefaultHttpClient│  │RetryingHttpClient│               │
 │  │(Java 21)        │  │(decorator)       │               │
 │  └─────────────────┘  └──────────────────┘               │
-│                        ┌──────────────────┐              │
-│                        │ MockHttpClient   │  (tests)     │
-│                        └──────────────────┘              │
+│  ┌─────────────────┐  ┌──────────────────┐               │
+│  │ MockHttpClient  │  │ApacheHttpClient  │  (tests)      │
+│  │(unit tests)     │  │(integration tests│               │
+│  └─────────────────┘  └──────────────────┘               │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -113,13 +114,17 @@ The `HttpClient` interface has a single method:
 HttpResponse get(String url, String bearerToken);
 ```
 
-The default implementation uses Java 21's built-in `java.net.http.HttpClient`. Consumers can provide their own implementation for testing, alternate HTTP libraries (OkHttp, Apache HttpClient), or custom behavior (logging, metrics, circuit breaking).
+The default implementation uses Java 21's built-in `java.net.http.HttpClient`. Consumers can provide their own implementation for testing, alternate HTTP libraries (OkHttp, Apache HttpClient), or custom behavior (metrics, circuit breaking).
+
+An `ApacheHttpClient` implementation backed by Apache HttpClient 5.x is included in the integration test source set (`src/integration-test/`) and serves both as a working example and as a second transport exercised by the live integration test suite.
+
+Both `DefaultHttpClient` and `RetryingHttpClient` emit structured log statements via `java.util.logging`. `INFO` covers outgoing requests, response status codes, and retry attempts. `FINE` covers rate-limit header values and retry success — detail useful when diagnosing rate-limit behavior but too noisy for normal operation.
 
 **Why:** This is the seam that makes the entire SDK testable without network access. Tests run in milliseconds with full control over responses via `MockHttpClient`, which enqueues responses and records requests for assertion.
 
 ### 5. Rate Limiting with Configurable Backoff
 
-The API limits requests to 100 per minute. The SDK addresses this with a `RetryingHttpClient` decorator that wraps any `HttpClient` implementation:
+The API limits requests to 100 per 10 minutes. The SDK addresses this with a `RetryingHttpClient` decorator that wraps any `HttpClient` implementation:
 
 - **Default:** Exponential backoff (1s, 2s, 4s) up to 3 retries
 - **Configurable:** Injectable `Function<Integer, Duration>` for custom backoff strategies
@@ -225,7 +230,15 @@ Tests are organized into three tiers:
 
 **Resource tests** (`MovieResourceTest`, `QuoteResourceTest`, `OneApiClientTest`) — Verify correct URL construction (including per-component encoding via the multi-argument `URI` constructor), response deserialization, error mapping, and builder behavior using `MockHttpClient`. These are integration tests at the component level — they exercise the full path from resource accessor to deserialized response.
 
-**Live integration tests** (`MovieResourceIT`, `QuoteResourceIT`) — Hit the real API with a real API key. Run via `mvn verify -Pintegration`. Separated into `src/integration-test/` with a Maven profile so `mvn test` stays fast and self-contained.
+**Live integration tests** — Hit the real API with a real API key. Run via `mvn verify -Pintegration`. Separated into `src/integration-test/` with a Maven profile so `mvn test` stays fast and self-contained.
+
+Each resource's tests are defined once in an abstract base class (`MovieResourceITBase`, `QuoteResourceITBase`) and inherited by two concrete subclasses — one using the default Java HTTP client (`MovieResourceIT`, `QuoteResourceIT`) and one using Apache HttpClient 5.x (`ApacheMovieResourceIT`, `ApacheQuoteResourceIT`). This ensures both transports are exercised against the live API without duplicating test logic.
+
+One test (`getMovie_exceedingRateLimit_withNoRetries_throwsRateLimitException`) is gated behind `@EnabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")` because it deliberately exhausts the rate limit window. Run it with:
+
+```bash
+RUN_RATE_LIMIT_TEST=true LOTR_API_KEY=your-key mvn verify -Pintegration
+```
 
 All unit and resource tests use `MockHttpClient`, which:
 - Enqueues responses in order for deterministic behavior
@@ -236,11 +249,12 @@ All unit and resource tests use `MockHttpClient`, which:
 
 The SDK has one runtime dependency beyond the Java 21 standard library:
 
-| Dependency | Purpose | Justification |
-|-----------|---------|---------------|
-| Jackson Databind 2.17 | JSON deserialization | Industry standard; handles generics and parameterized types cleanly |
+| Dependency | Scope | Purpose | Justification |
+|-----------|-------|---------|---------------|
+| Jackson Databind 2.17 | runtime | JSON deserialization | Industry standard; handles generics and parameterized types cleanly |
+| Apache HttpClient 5.x | integration test | Alternative HTTP transport | Demonstrates pluggable `HttpClient`; exercised by `Apache*IT` tests |
 
-HTTP transport uses `java.net.http.HttpClient` from the standard library — no additional dependency needed.
+HTTP transport and logging use `java.net.http.HttpClient` and `java.util.logging` from the standard library — no additional runtime dependencies needed.
 
 Test dependencies: JUnit 5 and AssertJ.
 
@@ -256,6 +270,39 @@ Test dependencies: JUnit 5 and AssertJ.
 | Enums + strings for filter fields | Two ways to do the same thing | Progressive disclosure: enums for safety, strings for flexibility. Documented and tested |
 | Singular API paths, plural SDK accessors | Minor mismatch if debugging network traffic | Follows Java SDK convention; SDK callers never see raw paths |
 | Default retry on 429 | Callers may not expect automatic retries | Configurable via `maxRetries(0)` to disable; default behavior matches production expectations |
+
+## Future Enhancements
+
+### AutoCloseable for HttpClient
+
+`java.net.http.HttpClient` (since Java 21) implements `Closeable`, allowing the underlying connection pool and executor to be explicitly shut down. The current `DefaultHttpClient` wraps it but does not expose a `close()` method, and `OneApiClient` does not implement `AutoCloseable`.
+
+Adding this would allow callers to use try-with-resources for deterministic cleanup in short-lived or test contexts:
+
+```java
+try (OneApiClient client = OneApiClient.builder().apiKey(key).build()) {
+    client.movies().list();
+}
+```
+
+The change requires:
+1. `HttpClient` interface extends `AutoCloseable`
+2. `DefaultHttpClient.close()` delegates to the underlying `java.net.http.HttpClient`
+3. `RetryingHttpClient.close()` delegates to its inner `HttpClient`
+4. `OneApiClient` implements `AutoCloseable` and closes the HTTP client chain
+
+The tradeoff is that long-lived clients (the typical use case) would need to be explicitly closed or managed by a DI container. This is consistent with how other SDK clients handle resource lifecycle (e.g., Apache HttpClient, AWS SDK).
+
+### Delombok for Developer Build Experience
+
+The SDK uses Lombok annotations (`@Getter`, `@Builder`, `@Value`) to reduce boilerplate. While Lombok works seamlessly at compile time, it has two developer-facing gaps:
+
+- **Javadoc**: Lombok-generated methods (getters, builder methods) do not appear in generated Javadoc, making the published API reference incomplete for users browsing docs.
+- **IDE navigation**: "Go to definition" on a generated method lands in the annotation, not a real method body. This is minor but can be disorienting.
+
+Adding a `delombok` phase to the Maven build (via `lombok-maven-plugin`) would generate equivalent Java source files before Javadoc runs, resulting in fully populated API docs. The delombok output would be used only for documentation — the compiled artifact would continue to use annotation processing as normal.
+
+This is a build improvement only and has no effect on the runtime SDK or its consumers.
 
 ## API Contract
 

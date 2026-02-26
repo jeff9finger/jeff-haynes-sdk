@@ -1,6 +1,6 @@
 # Lord of the Rings SDK
 
-A Java SDK for [The One API](https://the-one-api.dev), providing type-safe access to Lord of the Rings movie and quote data.
+A Java SDK for [The One API](https://the-one-api.dev) (a.k.a The Lord of the Rings API), providing type-safe access to Lord of the Rings movie and quote data.
 
 ## Requirements
 
@@ -33,18 +33,18 @@ The SDK provides a fluent filter builder that supports all API filter operators:
 
 ```java
 // String-based (flexible, works with any field)
-Filter.where("budgetInMillions").greaterThan(200)
+Filter.where("budgetInMillions").greaterThan(200);
 
 // Enum-based (type-safe, IDE-discoverable)
-Filter.where(MovieField.BUDGET_IN_MILLIONS).greaterThan(200)
+Filter.where(MovieField.BUDGET_IN_MILLIONS).greaterThan(200);
 
 // All operators
-Filter.where("name").equals("The Return of the King")
-Filter.where("name").notEquals("The Hobbit")
-Filter.where("name").in("The Two Towers", "The Return of the King")
-Filter.where("name").matchesRegex("/Ring/i")
-Filter.where("name").exists()
-Filter.where("runtimeInMinutes").lessThanOrEqual(180)
+Filter.where("name").equals("The Return of the King");
+Filter.where("name").notEquals("The Hobbit");
+Filter.where("name").in("The Two Towers", "The Return of the King");
+Filter.where("name").matchesRegex("/Ring/i");
+Filter.where("name").exists();
+Filter.where("runtimeInMinutes").lessThanOrEqual(180);
 ```
 
 ### Pagination & Sorting
@@ -136,6 +136,14 @@ mvn test
 LOTR_API_KEY=your-key mvn verify -Pintegration
 ```
 
+Each resource's integration tests run against both the default Java HTTP client and Apache HttpClient 5.x automatically.
+
+**Rate limit test** (deliberately exhausts the API quota — run separately):
+
+```bash
+RUN_RATE_LIMIT_TEST=true LOTR_API_KEY=your-key mvn verify -Pintegration
+```
+
 ## Running the Demo
 
 ```bash
@@ -164,12 +172,18 @@ src/main/java/dev/lotr/sdk/
 │   └── QuoteResource.java         # /quote endpoints
 ├── http/
 │   ├── HttpClient.java            # Interface (pluggable)
+│   ├── HttpStatus.java            # HTTP status code constants
 │   ├── DefaultHttpClient.java     # Java 21 HttpClient implementation
 │   └── RetryingHttpClient.java    # Decorator: rate-limit retry with backoff
 ├── response/PagedResponse.java    # Pagination metadata + Iterable
 ├── exception/                     # Typed exception hierarchy
 └── main/DemoApp.java              # Runnable demonstration
 ```
+
+## Known Limitations
+
+- **`OneApiClient` is not `AutoCloseable`** — the underlying HTTP connection pool is not explicitly shut down when the client is no longer needed. For long-lived applications this is typically fine (the JVM cleans up on exit), but short-lived or test contexts may want explicit lifecycle control. See [DESIGN.md](DESIGN.md) for the planned enhancement.
+- **Synchronous only** — all calls block the calling thread. Async support (`CompletableFuture`, reactive streams) is not currently provided; callers can wrap calls in `CompletableFuture.supplyAsync()` if needed.
 
 ## Design
 

@@ -8,6 +8,7 @@ import dev.lotr.sdk.response.PagedResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
@@ -31,6 +32,7 @@ abstract class QuoteResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listQuotes_returnsResults() {
         PagedResponse<Quote> response = client.quotes().list(
                 RequestOptions.builder().limit(5).build());
@@ -40,6 +42,7 @@ abstract class QuoteResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void getQuoteById_returnsCorrectQuote() {
         PagedResponse<Quote> quotes = client.quotes().list(
                 RequestOptions.builder().limit(1).build());
@@ -52,6 +55,7 @@ abstract class QuoteResourceITBase {
     }
 
     @Test
+    @DisabledIfEnvironmentVariable(named = "RUN_RATE_LIMIT_TEST", matches = "true")
     void listQuotes_withRegexFilter() {
         RequestOptions options = RequestOptions.builder()
                 .filter(Filter.where(QuoteField.DIALOG).matchesRegex("/ring/i"))
