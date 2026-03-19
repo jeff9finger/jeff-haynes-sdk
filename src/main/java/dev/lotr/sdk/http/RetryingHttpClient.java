@@ -96,13 +96,14 @@ public final class RetryingHttpClient implements HttpClient {
 
     private void throwIfRateLimitExhausted(HttpResponse response) {
         final Map<String, List<String>> headers = response.getHeaders();
-        int limit = extractRateLimitHeader(headers,X_RATE_LIMIT_LIMIT_HEADER);
         int remaining = extractRateLimitHeader(headers,X_RATE_LIMIT_REMAINING_HEADER);
         if (logger.isLoggable(FINE)) {
+            int limit = extractRateLimitHeader(headers,X_RATE_LIMIT_LIMIT_HEADER);
             logger.log(FINE, "429 received: x-ratelimit-limit={0}, x-ratelimit-remaining={1}",
                     new Object[]{limit, remaining});
         }
-        if (limit > 0 && remaining >= limit) {
+        if (remaining <= 0) {
+            int limit = extractRateLimitHeader(headers,X_RATE_LIMIT_LIMIT_HEADER);
             logger.log(WARNING, "Rate limit window exhausted (remaining={0}, limit={1}), not retrying",
                     new Object[]{remaining, limit});
             throw new RateLimitException(
