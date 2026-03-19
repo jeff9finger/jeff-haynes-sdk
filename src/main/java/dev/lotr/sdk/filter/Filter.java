@@ -77,13 +77,11 @@ public final class Filter {
 
     /** Exact match: {@code field=value} */
     public FilterExpression equals(String value) {
-        //return new FilterExpression(field + "=" + encode(value));
         return new FilterExpression(field + "=" + value);
     }
 
     /** Negated match: {@code field!=value} */
     public FilterExpression notEquals(String value) {
-        //return new FilterExpression(field + "!=" + encode(value));
         return new FilterExpression(field + "!=" + value);
     }
 
